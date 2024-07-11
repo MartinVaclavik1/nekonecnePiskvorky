@@ -5,6 +5,7 @@
 package ticktacktoe;
 
 import java.net.URL;
+import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.ResourceBundle;
 import java.util.function.BiConsumer;
@@ -37,6 +38,7 @@ public class FXMLDocumentController implements Initializable {
     private LinkedList<Pair<Integer, Integer>> pozice = new LinkedList<>();
     private boolean prvniIterace = true;
     private int maxPocet = 6;
+    private boolean prvniKontrola = true;
 
     /**
      * Initializes the controller class.
@@ -83,6 +85,9 @@ public class FXMLDocumentController implements Initializable {
         }
 
         vlozTvar(sirka, vyska);
+        if (pozice.size() >= maxPocet - 1) {
+            kontrolaVyhry();
+        }
     }
 
     private void vlozTvar(int sirka, int vyska) {
@@ -92,7 +97,7 @@ public class FXMLDocumentController implements Initializable {
             return;
         }
 
-        if (pozice.size() == maxPocet-1) {
+        if (pozice.size() == maxPocet - 1) {
             Node node = grid.getChildren().get(1);
             grid.getChildren().remove(1);
             if (node instanceof Circle) {
@@ -104,7 +109,7 @@ public class FXMLDocumentController implements Initializable {
 
         if (pozice.size() == maxPocet) {
 
-            grid.getChildren().remove(maxPocet-1);
+            grid.getChildren().remove(maxPocet - 1);
 
             pozice.remove(pozice.getFirst());
 
@@ -160,6 +165,80 @@ public class FXMLDocumentController implements Initializable {
 //            grid.add(line1, sirka, vyska);
 //            grid.add(line2, sirka, vyska);
         grid.add(shape, sirka, vyska);
+    }
+
+    //poslední vložený tvar - vzít lokaci, zkontrolovat, zda v sousedních buňkách
+    //je stejný tvar a když jo, tak podle lokací těhle 2 zjistit, kde by měl být
+    //třetí tvar (buď u posledního vloženého, nebo teď kontrolovaného)
+    //když je tam, tak se hra ukončí s popupem o tom kdo vyhrál
+    private void kontrolaVyhry() {
+        Iterator iterator = pozice.iterator();
+        int rozdelovac = 0;
+        Pair<Integer, Integer>[] data = new Pair[3];
+        int posledni = 0;
+        
+        while (iterator.hasNext()) {
+            if (rozdelovac % 2 == 0) {
+
+                //kontrola jednoho hráče - nutné jen při 5 prvcích
+                if (prvniKontrola) {    //TODO
+                    data[posledni++] = (Pair<Integer, Integer>) iterator.next();
+                } else{
+                    iterator.next();
+                }
+                
+            } else {//TODO
+                //kontrola hráče, když je 6 prvků
+                if(prvniKontrola){
+                iterator.next();
+                }else{
+                    data[posledni++] = (Pair<Integer, Integer>) iterator.next();
+                }
+            }
+            rozdelovac++;
+        }
+        
+        zkontrolujVstup(data);
+        
+        prvniKontrola = false;
+    }
+
+    private void zkontrolujVstup(Pair<Integer, Integer>[] data) {
+        for (Pair<Integer, Integer> pair : data) {
+            System.out.println(pair.getKey() + ", " + pair.getValue());
+        }
+        
+        int rozdilKey1 = data[2].getKey() - data[1].getKey(); //0 = stejná pozice, 1/-1 = vedlejší pozice, 2/-2 = nesousedící pozice
+        int rozdilValue1 = data[2].getValue()- data[1].getValue();
+        
+        int rozdilKey0 = data[2].getKey() - data[0].getKey();
+        int rozdilValue0 = data[2].getValue()- data[0].getValue();
+        
+        //odečíst od data[1] rozdilkey1 a value pro získání lokace data[0]
+        //přičíst k data[2] - same výsledek
+        if(Math.abs(rozdilKey1) <= 1 && Math.abs(rozdilValue1) <= 1){
+            System.out.println("vedle sebe");
+            
+            if(data[1].getKey() - rozdilKey1 == data[0].getKey() && data[1].getValue() - rozdilValue1 == data[0].getValue()){
+                System.out.println("výhra jeeej");
+            }else if(data[2].getKey() + rozdilKey1 == data[0].getKey() && data[2].getValue() + rozdilValue1 == data[0].getValue()){
+                System.out.println("výhra jeeej2");
+            }
+            
+        }else if(Math.abs(rozdilKey0) <= 1 && Math.abs(rozdilValue0) <= 1){
+            System.out.println("taky vedle sebe, ale ne s předposledním prvkem (lame)");
+            
+            if(data[0].getKey() - rozdilKey0 == data[1].getKey() && data[0].getValue() - rozdilValue0 == data[1].getValue()){
+                System.out.println("výhra jeeej");
+            }else if(data[2].getKey() + rozdilKey0 == data[1].getKey() && data[2].getValue() + rozdilValue0 == data[1].getValue()){
+                System.out.println("výhra jeeej2");
+            }
+        }
+        
+    }
+
+    private boolean jeNaStrane(Pair<Integer, Integer> pair) {
+        return pair.getKey() == 0 || pair.getKey() == 2 || pair.getValue() == 0 || pair.getValue() == 2;
     }
 
 }
