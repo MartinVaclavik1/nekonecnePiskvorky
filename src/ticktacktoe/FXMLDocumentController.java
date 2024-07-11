@@ -7,6 +7,7 @@ package ticktacktoe;
 import java.net.URL;
 import java.util.Iterator;
 import java.util.LinkedList;
+import java.util.Optional;
 import java.util.ResourceBundle;
 import java.util.function.BiConsumer;
 import javafx.fxml.FXML;
@@ -15,6 +16,9 @@ import javafx.geometry.HPos;
 import javafx.geometry.Pos;
 import javafx.geometry.VPos;
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
+import javafx.scene.control.ButtonType;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
@@ -176,69 +180,99 @@ public class FXMLDocumentController implements Initializable {
         int rozdelovac = 0;
         Pair<Integer, Integer>[] data = new Pair[3];
         int posledni = 0;
-        
+
         while (iterator.hasNext()) {
             if (rozdelovac % 2 == 0) {
 
                 //kontrola jednoho hráče - nutné jen při 5 prvcích
                 if (prvniKontrola) {    //TODO
                     data[posledni++] = (Pair<Integer, Integer>) iterator.next();
-                } else{
+                } else {
                     iterator.next();
                 }
-                
+
             } else {//TODO
                 //kontrola hráče, když je 6 prvků
-                if(prvniKontrola){
-                iterator.next();
-                }else{
+                if (prvniKontrola) {
+                    iterator.next();
+                } else {
                     data[posledni++] = (Pair<Integer, Integer>) iterator.next();
                 }
             }
             rozdelovac++;
         }
-        
-        zkontrolujVstup(data);
-        
         prvniKontrola = false;
+
+        zkontrolujVstup(data);
+
     }
 
     private void zkontrolujVstup(Pair<Integer, Integer>[] data) {
-        for (Pair<Integer, Integer> pair : data) {
-            System.out.println(pair.getKey() + ", " + pair.getValue());
-        }
-        
+
         int rozdilKey1 = data[2].getKey() - data[1].getKey(); //0 = stejná pozice, 1/-1 = vedlejší pozice, 2/-2 = nesousedící pozice
-        int rozdilValue1 = data[2].getValue()- data[1].getValue();
-        
+        int rozdilValue1 = data[2].getValue() - data[1].getValue();
+
         int rozdilKey0 = data[2].getKey() - data[0].getKey();
-        int rozdilValue0 = data[2].getValue()- data[0].getValue();
-        
+        int rozdilValue0 = data[2].getValue() - data[0].getValue();
+
         //odečíst od data[1] rozdilkey1 a value pro získání lokace data[0]
         //přičíst k data[2] - same výsledek
-        if(Math.abs(rozdilKey1) <= 1 && Math.abs(rozdilValue1) <= 1){
+        if (Math.abs(rozdilKey1) <= 1 && Math.abs(rozdilValue1) <= 1) {
             System.out.println("vedle sebe");
-            
-            if(data[1].getKey() - rozdilKey1 == data[0].getKey() && data[1].getValue() - rozdilValue1 == data[0].getValue()){
-                System.out.println("výhra jeeej");
-            }else if(data[2].getKey() + rozdilKey1 == data[0].getKey() && data[2].getValue() + rozdilValue1 == data[0].getValue()){
-                System.out.println("výhra jeeej2");
+
+            if (data[1].getKey() - rozdilKey1 == data[0].getKey() && data[1].getValue() - rozdilValue1 == data[0].getValue()) {
+                vyhra();
+            } else if (data[2].getKey() + rozdilKey1 == data[0].getKey() && data[2].getValue() + rozdilValue1 == data[0].getValue()) {
+                vyhra();
             }
-            
-        }else if(Math.abs(rozdilKey0) <= 1 && Math.abs(rozdilValue0) <= 1){
+
+        } else if (Math.abs(rozdilKey0) <= 1 && Math.abs(rozdilValue0) <= 1) {
             System.out.println("taky vedle sebe, ale ne s předposledním prvkem (lame)");
-            
-            if(data[0].getKey() - rozdilKey0 == data[1].getKey() && data[0].getValue() - rozdilValue0 == data[1].getValue()){
-                System.out.println("výhra jeeej");
-            }else if(data[2].getKey() + rozdilKey0 == data[1].getKey() && data[2].getValue() + rozdilValue0 == data[1].getValue()){
-                System.out.println("výhra jeeej2");
+
+            if (data[0].getKey() - rozdilKey0 == data[1].getKey() && data[0].getValue() - rozdilValue0 == data[1].getValue()) {
+                vyhra();
+
+            } else if (data[2].getKey() + rozdilKey0 == data[1].getKey() && data[2].getValue() + rozdilValue0 == data[1].getValue()) {
+                vyhra();
             }
         }
-        
+
     }
 
-    private boolean jeNaStrane(Pair<Integer, Integer> pair) {
-        return pair.getKey() == 0 || pair.getKey() == 2 || pair.getValue() == 0 || pair.getValue() == 2;
+    private void vyhra() {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION);
+        alert.setHeaderText("Konec hry. Chcete hrát znovu?");
+        
+        Alert promptNaVypnuti = new Alert(Alert.AlertType.CONFIRMATION);
+        promptNaVypnuti.setHeaderText("Chcete vypnout aplikaci?");
+        
+        Optional vysledek = alert.showAndWait();
+        if (vysledek != null) {
+            if (vysledek.get() == ButtonType.OK) {
+
+                for (int i = 0; i < 6; i++) {
+                    try {
+                        grid.getChildren().remove(1);
+                    } catch (Exception x) {
+                        System.out.println("out of bounds");
+                        break;
+                    }
+                }
+                pozice.clear();
+                prvniKontrola = true;
+                prvniIterace = true;
+                counter = 0;
+                
+            } else if (vysledek.get() == ButtonType.CANCEL) {
+                
+                Optional vypnuti = promptNaVypnuti.showAndWait();
+                if(vypnuti!= null){
+                    if(vypnuti.get() == ButtonType.OK)
+                        System.exit(0);
+                }
+                
+            }
+        }
     }
 
 }
